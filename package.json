@@ -1,6 +1,6 @@
 {
   "name": "arifpay-express-plugin",
-  "version": "3.0.1",
+  "version": "4.0.1",
   "description": "This is Arifpay's Express plugin. for all the steps to integrate your bussiness with arifpay's gateway please go to the developer documentation",
   "main": "Arifpay.js",
   "scripts": {

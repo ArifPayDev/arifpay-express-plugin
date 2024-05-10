@@ -1,4 +1,4 @@
-# ArifPay Express Plugin
+<!-- # ArifPay Express Plugin -->
 
 
 
@@ -90,3 +90,39 @@ For open source projects, say how it is licensed.
 
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+
+## Usage
+To use this project, you’ll need to require the ArifPay module and create a new instance with your API key and expiration date. Then, you can call the makePayment method with your payment information.
+
+Here’s an example:
+const ArifPay = require("path to the Arifpay plugin");
+
+const paymentInfo = {
+  cancelUrl: "https://example.com",
+  phone: "phone number",
+  email: "Email@gmail.com",
+  errorUrl: "yout errorUrl",
+  notifyUrl: "your notifyUrl ",
+  successUrl: "your successUrl",
+  paymentMethods: ["TELEBIRR"],
+ 
+  items: [ list of items object {} with name ,quantity and other as you want
+     
+  ],
+  lang: "EN",
+};
+
+const payment = new ArifPay(
+  "your API KEY",
+  "expireDate"
+);
+
+payment
+  .makePayment(paymentInfo)
+  .then((data) => {
+    //successful
+    console.log(data);
+  })
+  .catch((error) => {
+    //error
+  console.error(error))};

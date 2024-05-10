@@ -1,70 +1,83 @@
-require('dotenv').config()
-const { v4: uuidv4 } = require('uuid');
-const BASE_URL=process.env.Base_url || "http://196.189.44.37:2000/api/sandbox";
-const MakePayment_url=process.env.Create_checkout_path || "/checkout/session";
-class ArifPay{
-    constructor(API_key,expireDate){
-        this.API_key=API_key;
-        this.expireDate=expireDate;
-    }
-    change_to_number(data)
-    {
-      data.items.forEach(item=>{
-        item.quantity=Number(item.quantity);
-        item.price=Number(item.price);
-      })
-      data.beneficiaries.forEach(benef=>{
-        benef.amount=Number(benef.amount);
-      })
-      return data;
-    }
-    async Make_payment(payment_info)
-    {
-      const requiredFields = [
-        "cancelUrl",
-        "successUrl",
-        "errorUrl",
-        "notifyUrl",
-        "paymentMethods",
-        "items",
-        "beneficiaries",
+require("dotenv").config();
+const { v4: uuidv4 } = require("uuid");
+const BASE_URL = process.env.Base_url || "http://getway.arifpay.net/api";
+const MakePayment_url = process.env.Create_checkout_path || "checkout/session";
+
+class ArifPay {
+  constructor(API_key, expireDate) {
+    this.API_key = API_key;
+    this.expireDate = expireDate;
+    this.requiredFields = [
+      "cancelUrl",
+      "successUrl",
+      "errorUrl",
+      "notifyUrl",
+      "paymentMethods",
+      "items",
+    ];
+  }
+
+  validatePaymentInfo(payment_info) {
+    const beneficiariesAmount = payment_info.items.reduce((total, item) => {
+      item.quantity = Number(item.quantity);
+      item.price = Number(item.price);
+      return total + item.quantity * item.price;
+    }, 0);
+
+    if (!payment_info.hasOwnProperty("beneficiaries")) {
+      payment_info.beneficiaries = [
+        {
+          accountNumber: "01320811436100",
+          bank: "AWINETAA",
+          amount: beneficiariesAmount,
+        },
       ];
-    
-      const missingFields = requiredFields.filter(
-        (field) => payment_info[field].length===0
+    }
+
+    return new Promise((resolve, reject) => {
+      const missingFields = this.requiredFields.filter(
+        (field) => !payment_info.hasOwnProperty(field)
       );
-    
+
       if (missingFields.length > 0) {
-        const missingFieldsObj = {};
-        missingFields.forEach((field) => {
-          missingFieldsObj[field] = `${field} is a required field please enter this field`;
-        });
-        return missingFieldsObj;
+        reject(
+          new Error(
+            `The following required fields are missing from payment_info: ${missingFields.join(
+              ", "
+            )}`
+          )
+        );
+      } else {
+        resolve("All required fields are present.");
       }
-    
-      Object.keys(payment_info.customization || {}).forEach((field) => {
-        payment_info[`customization[${field}]`] = payment_info.customization[field];
-      });
-      delete payment_info.customization;
+    });
+  }
+
+  async makePayment(payment_info) {
+    try {
+      await this.validatePaymentInfo(payment_info);
       payment_info.nonce = uuidv4();
       payment_info.expireDate = this.expireDate;
-      payment_info=this.change_to_number(payment_info);
-      console.log(payment_info);
-      if (missingFields.length === 0) {
-        const url = BASE_URL+MakePayment_url;
-        const options = {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-arifpay-key":this.API_key,
-          },
-          body: JSON.stringify(payment_info),
-        };
-        
-        const response = await fetch(url, options);
-        const data = await response.json();
-        return data;
+      const url = `${BASE_URL}${MakePayment_url}`;
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-arifpay-key": this.API_key,
+        },
+        body: JSON.stringify(payment_info),
+      };
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(error);
+      return error.message;
+    }
+  }
 }
-}
-}
-module.exports=ArifPay;
+
+module.exports = ArifPay;
